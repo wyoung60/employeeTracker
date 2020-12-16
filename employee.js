@@ -15,7 +15,7 @@ const menuOptions = () => {
       type: "list",
       message: "What would you like to do?",
       name: "userSelection",
-      choices: ["Add department", "Employees", "Exit"],
+      choices: ["Add department", "Add employee", "Exit"],
     })
     .then((data) => {
       switch (data.userSelection) {
@@ -24,8 +24,8 @@ const menuOptions = () => {
         case "Departments":
           console.log("1");
           break;
-        case "Employees":
-          console.log("2");
+        case "Add employee":
+          return addEmployee();
         case "Exit":
           connection.end();
       }
@@ -48,6 +48,29 @@ function addDepartment() {
       );
     });
 }
+
+function addEmployee() {
+  inquirer
+    .prompt([
+      {
+        message: "What is the employee's first name?",
+        name: "first_name",
+      },
+      { message: "What is the employee's last name?", name: "last_name" },
+    ])
+    .then((data) => {
+      connection.query(
+        "INSERT INTO employees SET ?",
+        {
+          first_name: data.first_name,
+          last_name: data.last_name,
+        },
+        menuOptions()
+      );
+    });
+}
+
+function addRole() {}
 
 connection.connect((err) => {
   if (err) throw err;
