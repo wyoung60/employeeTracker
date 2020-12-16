@@ -15,7 +15,13 @@ const menuOptions = () => {
       type: "list",
       message: "What would you like to do?",
       name: "userSelection",
-      choices: ["Add department", "Add employee", "Exit"],
+      choices: [
+        "Add department",
+        "Add employee",
+        "Add role",
+        "View Employees",
+        "Exit",
+      ],
     })
     .then((data) => {
       switch (data.userSelection) {
@@ -25,7 +31,20 @@ const menuOptions = () => {
           console.log("1");
           break;
         case "Add employee":
-          return addEmployee();
+          connection.query("Select * FROM departments", (err, res) => {
+            if (err) throw err;
+            let departmentOptions = [];
+            res.forEach((job) => {
+              departmentOptions.push(job.name);
+            });
+            addEmployee(departmentOptions);
+          });
+
+          break;
+        case "Add role":
+          return addRole();
+        case "View Employees":
+          return viewEmployees();
         case "Exit":
           connection.end();
       }
@@ -49,7 +68,7 @@ function addDepartment() {
     });
 }
 
-function addEmployee() {
+function addEmployee(departmentOptions) {
   inquirer
     .prompt([
       {
@@ -57,20 +76,50 @@ function addEmployee() {
         name: "first_name",
       },
       { message: "What is the employee's last name?", name: "last_name" },
+      {
+        type: "list",
+        message: "What role will the employee have?",
+        name: "roleID",
+        choices: departmentOptions,
+      },
     ])
     .then((data) => {
+      let roleNumber = departmentOptions.indexOf(data.roleID) + 1;
       connection.query(
         "INSERT INTO employees SET ?",
         {
           first_name: data.first_name,
           last_name: data.last_name,
+          roleID: roleNumber,
         },
         menuOptions()
       );
     });
 }
 
-function addRole() {}
+function addRole() {
+  inquirer
+    .prompt([
+      { message: "What is the role you would like to add?", name: "title" },
+      { message: "What is the salary of this role?", name: "salary" },
+    ])
+    .then((data) => {
+      connection.query(
+        "INSERT INTO roles SET ?",
+        { title: data.title, salary: data.salary },
+        menuOptions()
+      );
+    });
+}
+
+function viewEmployees() {
+  const query =
+    "SELECT employees.id, first_name, last_name, title, salary FROM employees LEFT JOIN roles ON employees.roleID = roles.id;";
+  connection.query(query, (err, res) => {
+    console.table(res);
+    menuOptions();
+  });
+}
 
 connection.connect((err) => {
   if (err) throw err;
