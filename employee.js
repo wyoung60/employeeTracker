@@ -19,6 +19,7 @@ const menuOptions = () => {
         "View All Employees",
         "View Employees By Department",
         "View Employees By Manager",
+        "Add Employee",
         "Exit",
       ],
     })
@@ -30,6 +31,8 @@ const menuOptions = () => {
           return viewEmployeesDepartment();
         case "View Employees By Manager":
           return viewEmployeeByManager();
+        case "Add Employee":
+          return addEmployee();
         case "Exit":
           connection.end();
       }
@@ -89,7 +92,6 @@ const viewEmployeeByManager = () => {
         name: `${manager.first_name} ${manager.last_name}`,
       });
     });
-    console.log(managerChoices);
     inquirer
       .prompt([
         {
@@ -110,6 +112,69 @@ const viewEmployeeByManager = () => {
         });
       });
   });
+};
+
+const addEmployee = () => {
+  let newEmployee = {
+    first_name: "",
+    last_name: "",
+    roleID: "",
+    managerID: "",
+  };
+  inquirer
+    .prompt([
+      { message: "What is the employee's first name?", name: "first_name" },
+      { message: "What is the employee's last name?", name: "last_name" },
+    ])
+    .then((data) => {
+      newEmployee.first_name = data.first_name;
+      newEmployee.last_name = data.last_name;
+      query1 = "SELECT id, title FROM roles";
+      connection.query(query1, (err, res) => {
+        if (err) throw err;
+        let roleArray = [];
+        res.forEach((role) => {
+          roleArray.push({ value: role.id, name: role.title });
+        });
+        inquirer
+          .prompt({
+            type: "list",
+            message: "What will be the new employee's role?",
+            name: "roleID",
+            choices: roleArray,
+          })
+          .then((data) => {
+            newEmployee.roleID = parseInt(data.roleID);
+            const query3 =
+              "SELECT id, first_name, last_name FROM employees WHERE managerID IS null";
+            connection.query(query3, (err, res) => {
+              if (err) throw err;
+              let managerArray = [{ value: null, name: "N/A" }];
+              res.forEach((manager) => {
+                managerArray.push({
+                  value: manager.id,
+                  name: `${manager.first_name} ${manager.last_name}`,
+                });
+              });
+              inquirer
+                .prompt({
+                  type: "list",
+                  message: "Who will the employee report to?",
+                  name: "managerID",
+                  choices: managerArray,
+                })
+                .then((data) => {
+                  newEmployee.managerID = data.managerID;
+                  const query4 = "INSERT INTO employees SET ?";
+                  connection.query(query4, newEmployee, (err) => {
+                    if (err) throw err;
+                    menuOptions();
+                  });
+                });
+            });
+          });
+      });
+    });
 };
 
 connection.connect((err) => {
