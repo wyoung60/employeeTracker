@@ -43,6 +43,7 @@ const viewEmployees = () => {
   connection.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
+    menuOptions();
   });
 };
 
@@ -77,27 +78,32 @@ const viewEmployeesDepartment = () => {
 };
 
 const viewEmployeeByManager = () => {
-  const query1 = "SELECT * FROM departments";
+  const query1 =
+    "SELECT id, first_name, last_name FROM employees WHERE managerID IS null";
   connection.query(query1, (err, res) => {
     if (err) throw err;
-    let departmentChoices = [];
-    res.forEach((department) => {
-      departmentChoices.push(department.name);
+    let managerChoices = [];
+    res.forEach((manager) => {
+      managerChoices.push({
+        value: manager.id,
+        name: `${manager.first_name} ${manager.last_name}`,
+      });
     });
+    console.log(managerChoices);
     inquirer
       .prompt([
         {
           type: "list",
-          message: "What department would you like to see?",
-          name: "department",
-          choices: departmentChoices,
+          message: "Whose team would you like to see?",
+          name: "manager",
+          choices: managerChoices,
         },
       ])
       .then((data) => {
         const query2 =
-          'SELECT employees.id AS ID, employees.first_name AS First_Name, employees.last_name AS Last_Name, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id WHERE ?';
+          'SELECT employees.id AS ID, employees.first_name AS First_Name, employees.last_name AS Last_Name, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id WHERE employees.?';
 
-        connection.query(query2, { name: data.department }, (err, res) => {
+        connection.query(query2, { managerID: data.manager }, (err, res) => {
           if (err) throw err;
           console.table(res);
           menuOptions();
