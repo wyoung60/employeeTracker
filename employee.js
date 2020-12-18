@@ -19,7 +19,11 @@ const menuOptions = () => {
         "View All Employees",
         "View Employees By Department",
         "View Employees By Manager",
-        "Add Employee",
+        "Add New Employee",
+        "View Departments",
+        "Add New Department",
+        "Remove Department",
+        "View Roles",
         "Exit",
       ],
     })
@@ -31,8 +35,14 @@ const menuOptions = () => {
           return viewEmployeesDepartment();
         case "View Employees By Manager":
           return viewEmployeeByManager();
-        case "Add Employee":
+        case "Add New Employee":
           return addEmployee();
+        case "View Departments":
+          return viewDepartment();
+        case "Add New Department":
+          return addDepartment();
+        case "Remove Department":
+          return viewDepartment(true);
         case "Exit":
           connection.end();
       }
@@ -173,6 +183,55 @@ const addEmployee = () => {
                 });
             });
           });
+      });
+    });
+};
+
+const viewDepartment = (remove) => {
+  const query1 = "SELECT * FROM departments";
+  connection.query(query1, (err, res) => {
+    if (err) throw err;
+    if (remove) {
+      removeDepartment(res);
+    } else {
+      console.table(res);
+      menuOptions();
+    }
+  });
+};
+
+const addDepartment = () => {
+  inquirer
+    .prompt([
+      {
+        message: "What is the name of the department you would like ot add?",
+        name: "departmentName",
+      },
+    ])
+    .then((data) => {
+      const query1 = "INSERT INTO departments SET ?";
+      connection.query(query1, { name: data.departmentName }, (err) => {
+        if (err) throw err;
+        menuOptions();
+      });
+    });
+};
+
+const removeDepartment = (data) => {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        message: "What department would you like to remove?",
+        name: "name",
+        choices: data,
+      },
+    ])
+    .then((data) => {
+      const query2 = "DELETE FROM departments WHERE ?";
+      connection.query(query2, { name: data.name }, (err) => {
+        if (err) throw err;
+        menuOptions();
       });
     });
 };
