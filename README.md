@@ -12,6 +12,8 @@ Command line application that allows manager to add, delete, or update job funct
 
 - [Usage](#usage)
 
+- [Screenshot](#screenshot)
+
 - [License](#license)
 
 - [Links](#links)
@@ -25,6 +27,10 @@ Install necessary dependencies with npm i command.
 ## Usage
 
 Command line application requiring npm packages mysql, inquirer, console.table, and asciiart-logo.
+
+## Screenshot
+
+<img scr = "./Images/Screenshot.JPG">
 
 ## License
 
