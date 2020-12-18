@@ -41,7 +41,7 @@ const menuOptions = () => {
         case "Add New Employee":
           return addEmployee();
         case "Remove Employee":
-          return removeEmployee();
+          return viewEmployees(true);
         case "View Departments":
           return viewDepartment();
         case "Add New Department":
@@ -53,21 +53,25 @@ const menuOptions = () => {
         case "Add New Role":
           return viewDepartment("Role");
         case "Remove Role":
-          return viewRole("Remove");
+          return viewRole(true);
         case "Exit":
           connection.end();
       }
     });
 };
 
-const viewEmployees = () => {
+const viewEmployees = (remove) => {
   const query =
-    'SELECT employees.id AS ID, employees.first_name AS First_Name, employees.last_name AS Last_Name, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id;';
+    'SELECT employees.id AS ID, employees.first_name AS FirstName, employees.last_name AS LastName, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id;';
 
   connection.query(query, (err, res) => {
     if (err) throw err;
-    console.table(res);
-    menuOptions();
+    if (remove) {
+      removeEmployee(res);
+    } else {
+      console.table(res);
+      menuOptions();
+    }
   });
 };
 
@@ -90,7 +94,7 @@ const viewEmployeesDepartment = () => {
       ])
       .then((data) => {
         const query2 =
-          'SELECT employees.id AS ID, employees.first_name AS First_Name, employees.last_name AS Last_Name, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id WHERE ?';
+          'SELECT employees.id AS ID, employees.first_name AS FirstName, employees.last_name AS LastName, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id WHERE ?';
 
         connection.query(query2, { name: data.department }, (err, res) => {
           if (err) throw err;
@@ -124,7 +128,7 @@ const viewEmployeeByManager = () => {
       ])
       .then((data) => {
         const query2 =
-          'SELECT employees.id AS ID, employees.first_name AS First_Name, employees.last_name AS Last_Name, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id WHERE employees.?';
+          'SELECT employees.id AS ID, employees.first_name AS FirstName, employees.last_name AS LastName, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id WHERE employees.?';
 
         connection.query(query2, { managerID: data.manager }, (err, res) => {
           if (err) throw err;
@@ -198,7 +202,31 @@ const addEmployee = () => {
     });
 };
 
-const removeEmployee = () => {};
+const removeEmployee = (data) => {
+  let employeeData = [];
+  data.forEach((employee) => {
+    employeeData.push({
+      name: `${employee.FirstName} ${employee.LastName}`,
+      value: employee.ID,
+    });
+  });
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        message: "What employee would you like to remove?",
+        name: "employeeName",
+        choices: employeeData,
+      },
+    ])
+    .then((data) => {
+      const query = "DELETE FROM employees WHERE ?";
+      connection.query(query, { id: data.employeeName }, (err) => {
+        if (err) throw err;
+        menuOptions();
+      });
+    });
+};
 
 const viewDepartment = (next) => {
   const query1 = "SELECT * FROM departments";
