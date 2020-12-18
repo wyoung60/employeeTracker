@@ -14,10 +14,6 @@ Command line application that allows manager to add, delete, or update job funct
 
 - [License](#license)
 
-- [Contributing](#contributing)
-
-- [Tests](#tests)
-
 - [Links](#links)
 
 - [Questions](#questions)
@@ -34,18 +30,9 @@ Command line application requiring npm packages mysql, inquirer, console.table, 
 
 Licensed under MIT license.
 
-## Contributing
-
-None
-
-## Tests
-
-Use none command to test repo.
-
 ## Links
 
-https://wyoung60.github.io/{add repo name here} </br>
-https://github.com/wyoung60/{add repo name here}
+https://github.com/wyoung60/employeeTracker
 
 ## Questions
 
