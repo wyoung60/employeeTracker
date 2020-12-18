@@ -21,6 +21,8 @@ const menuOptions = () => {
         "View Employees By Manager",
         "Add New Employee",
         "Remove Employee",
+        "Update Employee Role",
+        "Update Employee Manager",
         "View Departments",
         "Add New Department",
         "Remove Department",
@@ -41,7 +43,11 @@ const menuOptions = () => {
         case "Add New Employee":
           return addEmployee();
         case "Remove Employee":
-          return viewEmployees(true);
+          return viewEmployees("Remove");
+        case "Update Employee Role":
+          return viewEmployees("Update Role");
+        case "Update Employee Manager":
+          return updateEmployeeManager();
         case "View Departments":
           return viewDepartment();
         case "Add New Department":
@@ -53,24 +59,27 @@ const menuOptions = () => {
         case "Add New Role":
           return viewDepartment("Role");
         case "Remove Role":
-          return viewRole(true);
+          return viewRole("Remove");
         case "Exit":
           connection.end();
       }
     });
 };
 
-const viewEmployees = (remove) => {
+const viewEmployees = (next) => {
   const query =
     'SELECT employees.id AS ID, employees.first_name AS FirstName, employees.last_name AS LastName, title AS Title, name AS Department, salary AS Salary, CONCAT(a.first_name, " ", a.last_name) AS Manager FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id LEFT JOIN employees a ON employees.managerID = a.id;';
 
   connection.query(query, (err, res) => {
     if (err) throw err;
-    if (remove) {
-      removeEmployee(res);
-    } else {
-      console.table(res);
-      menuOptions();
+    switch (next) {
+      case "Remove":
+        return removeEmployee(res);
+      case "Update Role":
+        return updateEmployeeRole(res, "Employee");
+      default:
+        console.table(res);
+        menuOptions();
     }
   });
 };
@@ -228,6 +237,64 @@ const removeEmployee = (data) => {
     });
 };
 
+const employeeToUpdate = { id: "" };
+
+const updateEmployeeRole = (data, tableName) => {
+  switch (tableName) {
+    case "Employee":
+      const employeeNames = [];
+      data.forEach((name) => {
+        employeeNames.push({
+          name: `${name.FirstName} ${name.LastName}`,
+          value: name.ID,
+        });
+      });
+      inquirer
+        .prompt([
+          {
+            type: "list",
+            message: "Which employee would you like to update?",
+            name: "employeeID",
+            choices: employeeNames,
+          },
+        ])
+        .then((data) => {
+          employeeToUpdate.id = data.employeeID;
+          viewRole("Update Role");
+        });
+      break;
+    case "Role":
+      console.log(employeeToUpdate);
+      const roleNames = [];
+      data.forEach((role) => {
+        roleNames.push({ name: role.title, value: role.id });
+      });
+      inquirer
+        .prompt([
+          {
+            type: "list",
+            message: "What is the employee's new role?",
+            name: "newRole",
+            choices: roleNames,
+          },
+        ])
+        .then((data) => {
+          const query = "UPDATE employees SET ? WHERE ?";
+          connection.query(
+            query,
+            [{ roleID: data.newRole }, { id: employeeToUpdate.id }],
+            (err) => {
+              if (err) throw err;
+            }
+          );
+          menuOptions();
+        });
+      break;
+  }
+};
+
+const updateEmployeeManager = () => {};
+
 const viewDepartment = (next) => {
   const query1 = "SELECT * FROM departments";
   connection.query(query1, (err, res) => {
@@ -280,16 +347,20 @@ const removeDepartment = (data) => {
     });
 };
 
-const viewRole = (remove) => {
+const viewRole = (next) => {
   const query =
     "SELECT roles.id, title, salary, name FROM roles LEFT JOIN departments ON roles.departmentID = departments.id";
   connection.query(query, (err, res) => {
     if (err) throw err;
-    if (remove) {
-      removeRole(res);
-    } else {
-      console.table(res);
-      menuOptions();
+    switch (next) {
+      case "Remove":
+        return removeRole(res);
+      case "Update Role":
+        return updateEmployeeRole(res, "Role");
+      default:
+        console.table(res);
+        menuOptions();
+        break;
     }
   });
 };
