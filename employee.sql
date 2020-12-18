@@ -1,9 +1,11 @@
+-- Deletes database if exist, creates and uses database --
 DROP DATABASE IF EXISTS company_db;
 
 CREATE DATABASE company_db;
 
 USE company_db;
-
+ 
+-- Create tables --
 CREATE TABLE departments(
 id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
 name VARCHAR(30)
@@ -24,6 +26,7 @@ roleID INT,
 managerID INT
 );
 
+--Seed data --
 INSERT INTO departments(name) VALUES ("Meat"), ("Seafood"), ("Grocery"), ("Deli");
 
 INSERT INTO roles(title, salary, departmentID) VALUES ("Meat Leader", 50000, 1), ("Meat Team Member", 30000, 1),("Sea Team Leader", 60000, 2), ("Sea Team Member", 35000, 2),("Gro Team Leader", 40000, 3), ("Gro Team Member", 27000, 3),("Deli Team Leader", 50000, 4), ("Deli Team Member", 30000, 4);
