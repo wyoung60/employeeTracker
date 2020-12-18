@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const logo = require("asciiart-logo");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -47,7 +48,7 @@ const menuOptions = () => {
         case "Update Employee Role":
           return viewEmployees("Update Role");
         case "Update Employee Manager":
-          return updateEmployeeManager();
+          return viewEmployees("Update Manager");
         case "View Departments":
           return viewDepartment();
         case "Add New Department":
@@ -77,9 +78,12 @@ const viewEmployees = (next) => {
         return removeEmployee(res);
       case "Update Role":
         return updateEmployeeRole(res, "Employee");
+      case "Update Manager":
+        return updateEmployeeManager(res, "Employee");
       default:
         console.table(res);
         menuOptions();
+        break;
     }
   });
 };
@@ -293,7 +297,63 @@ const updateEmployeeRole = (data, tableName) => {
   }
 };
 
-const updateEmployeeManager = () => {};
+const updateEmployeeManager = (data, tableName) => {
+  switch (tableName) {
+    case "Employee":
+      const employeeNames = [];
+      data.forEach((name) => {
+        employeeNames.push({
+          name: `${name.FirstName} ${name.LastName}`,
+          value: name.ID,
+        });
+      });
+      inquirer
+        .prompt([
+          {
+            type: "list",
+            message: "Which employee would you like to update?",
+            name: "employeeID",
+            choices: employeeNames,
+          },
+        ])
+        .then((data) => {
+          employeeToUpdate.id = data.employeeID;
+          const query1 =
+            "SELECT id, first_name, last_name FROM employees WHERE managerID IS null";
+          connection.query(query1, (err, res) => {
+            if (err) throw err;
+            managerNames = [{ name: "N/A", value: null }];
+            res.forEach((manager) => {
+              managerNames.push({
+                name: `${manager.first_name} ${manager.last_name}`,
+                value: manager.id,
+              });
+            });
+            inquirer
+              .prompt([
+                {
+                  type: "list",
+                  message: "Who is the employee's new manager?",
+                  name: "newManager",
+                  choices: managerNames,
+                },
+              ])
+              .then((data) => {
+                const query2 = "UPDATE employees SET ? WHERE ?";
+                connection.query(
+                  query2,
+                  [{ managerID: data.newManager }, { id: employeeToUpdate.id }],
+                  (err) => {
+                    if (err) throw err;
+                    menuOptions();
+                  }
+                );
+              });
+          });
+        });
+      break;
+  }
+};
 
 const viewDepartment = (next) => {
   const query1 = "SELECT * FROM departments";
@@ -430,103 +490,6 @@ const removeRole = (data) => {
 connection.connect((err) => {
   if (err) throw err;
   console.log(`Connection at id ${connection.threadId}`);
+  console.log(logo({ name: "Employee Manager" }).render());
   menuOptions();
 });
-
-// function addEmployee(departmentOptions, managerList) {
-//   inquirer
-//     .prompt([
-//       {
-//         message: "What is the employee's first name?",
-//         name: "first_name",
-//       },
-//       { message: "What is the employee's last name?", name: "last_name" },
-//       {
-//         type: "list",
-//         message: "What role will the employee have?",
-//         name: "roleID",
-//         choices: departmentOptions,
-//       },
-//       {
-//         type: "list",
-//         message: "What role will the employee have?",
-//         name: "managerID",
-//         choices: departmentOptions,
-//       },
-//     ])
-//     .then((data) => {
-//       let roleNumber = departmentOptions.indexOf(data.roleID) + 1;
-//       connection.query(
-//         "INSERT INTO employees SET ?",
-//         {
-//           first_name: data.first_name,
-//           last_name: data.last_name,
-//           roleID: roleNumber,
-//         },
-//         menuOptions()
-//       );
-//     });
-// }
-
-// function addRole() {
-//   inquirer
-//     .prompt([
-//       { message: "What is the role you would like to add?", name: "title" },
-//       { message: "What is the salary of this role?", name: "salary" },
-//     ])
-//     .then((data) => {
-//       connection.query(
-//         "INSERT INTO roles SET ?",
-//         { title: data.title, salary: data.salary },
-//         menuOptions()
-//       );
-//     });
-// }
-
-// function viewEmployees() {
-//   const query1 = `ALTER TABLE employees MODIFY COLUMN managerID VARCHAR(30);`;
-//   connection.query(query1);
-//   const query2 =
-//     'UPDATE employees p LEFT JOIN employees tp ON p.managerID = tp.id SET p.managerID = CONCAT(tp.first_name, " ", tp.last_name) WHERE p.managerID = tp.id;';
-//   connection.query(query2);
-//   const query3 =
-//     "SELECT employees.id, first_name, last_name, title, salary, name, managerID FROM employees LEFT JOIN roles ON employees.roleID = roles.id LEFT JOIN departments ON roles.departmentID = departments.id;";
-//   connection.query(query3, (err, res) => {
-//     console.table(res);
-//     menuOptions();
-//   });
-// }
-
-// function viewRoles() {
-//   const query = "SELECT * FROM roles";
-// }
-
-// function getManagers() {
-//   const query =
-//     "SELECT first_name, last_name FROM employees WHERE managerID IS null";
-//   connection.query(query, (err, res) => {
-//     if (err) throw err;
-//     let managerList = [];
-//     res.forEach((manager) => {
-//       managerList.push(`${manager.first_name} ${manager.last_name}`);
-//     });
-//     console.log(managerList);
-//   });
-// }
-
-// function addDepartment() {
-//   inquirer
-//     .prompt({
-//       message: "What is the name of the department you would like to add?",
-//       name: "newDepartment",
-//     })
-//     .then((data) => {
-//       connection.query(
-//         "INSERT INTO departments SET ?",
-//         {
-//           name: data.newDepartment,
-//         },
-//         menuOptions()
-//       );
-//     });
-// }
