@@ -30,7 +30,7 @@ Command line application requiring npm packages mysql, inquirer, console.table, 
 
 ## Screenshot
 
-<img scr = "./Images/Screenshot.JPG">
+<img src = "./Images/Screenshot.JPG">
 
 ## License
 
