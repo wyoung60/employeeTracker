@@ -20,10 +20,13 @@ const menuOptions = () => {
         "View Employees By Department",
         "View Employees By Manager",
         "Add New Employee",
+        "Remove Employee",
         "View Departments",
         "Add New Department",
         "Remove Department",
         "View Roles",
+        "Add New Role",
+        "Remove Role",
         "Exit",
       ],
     })
@@ -37,12 +40,20 @@ const menuOptions = () => {
           return viewEmployeeByManager();
         case "Add New Employee":
           return addEmployee();
+        case "Remove Employee":
+          return removeEmployee();
         case "View Departments":
           return viewDepartment();
         case "Add New Department":
           return addDepartment();
         case "Remove Department":
-          return viewDepartment(true);
+          return viewDepartment("Remove");
+        case "View Roles":
+          return viewRole();
+        case "Add New Role":
+          return viewDepartment("Role");
+        case "Remove Role":
+          return viewRole("Remove");
         case "Exit":
           connection.end();
       }
@@ -187,15 +198,20 @@ const addEmployee = () => {
     });
 };
 
-const viewDepartment = (remove) => {
+const removeEmployee = () => {};
+
+const viewDepartment = (next) => {
   const query1 = "SELECT * FROM departments";
   connection.query(query1, (err, res) => {
     if (err) throw err;
-    if (remove) {
-      removeDepartment(res);
-    } else {
-      console.table(res);
-      menuOptions();
+    switch (next) {
+      case "Remove":
+        return removeDepartment(res);
+      case "Role":
+        return addRole(res);
+      default:
+        console.table(res);
+        menuOptions();
     }
   });
 };
@@ -230,6 +246,82 @@ const removeDepartment = (data) => {
     .then((data) => {
       const query2 = "DELETE FROM departments WHERE ?";
       connection.query(query2, { name: data.name }, (err) => {
+        if (err) throw err;
+        menuOptions();
+      });
+    });
+};
+
+const viewRole = (remove) => {
+  const query =
+    "SELECT roles.id, title, salary, name FROM roles LEFT JOIN departments ON roles.departmentID = departments.id";
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+    if (remove) {
+      removeRole(res);
+    } else {
+      console.table(res);
+      menuOptions();
+    }
+  });
+};
+
+const addRole = (data) => {
+  let departmentChoices = [];
+  data.forEach((department) =>
+    departmentChoices.push({
+      name: department.name,
+      value: department.id,
+    })
+  );
+  let newRole = {
+    title: "",
+    salary: "",
+    departmentID: "",
+  };
+  inquirer
+    .prompt([
+      {
+        message: "What is the name of the role you would like to add?",
+        name: "title",
+      },
+      { message: "What is the salary for the role?", name: "salary" },
+      {
+        type: "list",
+        message: "What department should the role be added to?",
+        name: "departmentID",
+        choices: departmentChoices,
+      },
+    ])
+    .then((data) => {
+      newRole.title = data.title;
+      newRole.salary = data.salary;
+      newRole.departmentID = data.departmentID;
+      const query = "INSERT INTO roles SET ?";
+      connection.query(query, newRole, (err) => {
+        if (err) throw err;
+        menuOptions();
+      });
+    });
+};
+
+const removeRole = (data) => {
+  let roleNames = [];
+  data.forEach((role) => {
+    roleNames.push({ name: role.title });
+  });
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        message: "What role would you like to remove?",
+        name: "title",
+        choices: roleNames,
+      },
+    ])
+    .then((data) => {
+      const query = "DELETE FROM roles WHERE ?";
+      connection.query(query, { title: data.title }, (err) => {
         if (err) throw err;
         menuOptions();
       });
